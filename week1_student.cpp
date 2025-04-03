@@ -51,12 +51,12 @@ int main (int argc, char *argv[])
 void calibrate_imu()
 {
  
-  float x_gyro_sum = 0;
-  float y_gyro_sum = 0;
-  float z_gyro_sum = 0;
-  float x_accel_sum = 0;
-  float y_accel_sum = 0;
-  float z_accel_sum = 0;
+  float x_gyro_sum = 0.0;
+  float y_gyro_sum = 0.0;
+  float z_gyro_sum = 0.0;
+  float x_accel_sum = 0.0;
+  float y_accel_sum = 0.0;
+  float z_accel_sum = 0.0;
   for (int i = 0; i < 1000; i++) {
     read_imu();
     x_accel_sum += imu_data[0];
