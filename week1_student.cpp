@@ -51,12 +51,12 @@ int main (int argc, char *argv[])
 void calibrate_imu()
 {
  
-  float x_gyro_sum = 0;
-  float y_gyro_sum = 0;
-  float z_gyro_sum = 0;
-  float x_accel_sum = 0;
-  float y_accel_sum = 0;
-  float z_accel_sum = 0;
+  float x_gyro_sum = 0.0;
+  float y_gyro_sum = 0.0;
+  float z_gyro_sum = 0.0;
+  float x_accel_sum = 0.0;
+  float y_accel_sum = 0.0;
+  float z_accel_sum = 0.0;
   for (int i = 0; i < 1000; i++) {
     read_imu();
     x_accel_sum += imu_data[0];
@@ -68,12 +68,12 @@ void calibrate_imu()
     z_gyro_sum += imu_data[5];
   }
 
-  x_gyro_calibration= x_gyro_sum/1000;
-  y_gyro_calibration=y_gyro_sum/1000;
-  z_gyro_calibration=z_gyro_sum/1000;
-  roll_calibration= x_accel_sum/1000;
-  pitch_calibration=y_accel_sum/1000;
-  accel_z_calibration= z_accel_sum/1000;
+  x_gyro_calibration= x_gyro_sum/1000.0;
+  y_gyro_calibration=y_gyro_sum/1000.0;
+  z_gyro_calibration=z_gyro_sum/1000.0;
+  roll_calibration= x_accel_sum/1000.0;
+  pitch_calibration=y_accel_sum/1000.0;
+  accel_z_calibration= z_accel_sum/1000.0;
 
 printf("calibration complete, %f %f %f %f %f %f\n\r",x_gyro_calibration,y_gyro_calibration,z_gyro_calibration,roll_calibration,pitch_calibration,accel_z_calibration);
 
@@ -192,7 +192,7 @@ int setup_imu()
     
     wiringPiI2CWriteReg8(gyro_address, 0x11, 0x00);//power on gyro
     wiringPiI2CWriteReg8(gyro_address, 0x0F, 0x01);//set gyro to +-1000dps
-    wiringPiI2CWriteReg8(gyro_address, 0x01, 0x03);//set data rate and bandwith
+    wiringPiI2CWriteReg8(gyro_address, 0x10, 0x03);//set data rate and bandwith
     
     
     sleep(1);
