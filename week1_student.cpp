@@ -93,7 +93,7 @@ void read_imu()
 
   //accel reads
 
-  address=0x12//use 0x00 format for hex
+  address=0x12;//use 0x00 format for hex
   vw=wiringPiI2CReadReg16(accel_address,address);    
   //convert from 2's complement
   if(vw>0x8000)
@@ -103,7 +103,7 @@ void read_imu()
   }          
   imu_data[0]= ((vw - (-32768)) * (3 - (-3)) / (32767 - (-32768))) + (-3) - roll_calibration;//convert to g's  //figure this out 
   
-  address=0x14//use 0x00 format for hex
+  address=0x14;//use 0x00 format for hex
   vw=wiringPiI2CReadReg16(accel_address,address);   
   //convert from 2's complement
   if(vw>0x8000)
@@ -113,7 +113,7 @@ void read_imu()
   }          
   imu_data[1]= ((vw - (-32768)) * (3 - (-3)) / (32767 - (-32768))) + (-3) - pitch_calibration;//convert to g's  //figure this out 
   
-  address=0x16//use 0x00 format for hex
+  address=0x16;//use 0x00 format for hex
   vw=wiringPiI2CReadReg16(accel_address,address);   
   //convert from 2's complement     
   if(vw>0x8000)
@@ -128,7 +128,7 @@ void read_imu()
 
   //gyro reads
 
-  address=0x02//use 0x00 format for hex
+  address=0x02;//use 0x00 format for hex
   vw=wiringPiI2CReadReg16(gyro_address,address);   
   //convert from 2's complement          
   if(vw>0x8000)
@@ -138,7 +138,7 @@ void read_imu()
   }          
   imu_data[3]= ((vw - (-32768)) * (1000 - (-1000)) / (32767 - (-32768))) + (-1000) - x_gyro_calibration;//convert to degrees/sec
   
-  address=0x04//use 0x00 format for hex
+  address=0x04;//use 0x00 format for hex
   vw=wiringPiI2CReadReg16(gyro_address,address);    
   //convert from 2's complement              
   if(vw>0x8000)
@@ -148,7 +148,7 @@ void read_imu()
   }          
   imu_data[4]= ((vw - (-32768)) * (1000 - (-1000)) / (32767 - (-32768))) + (-1000) - y_gyro_calibration;//convert to degrees/sec
   
-  address=0x06//use 0x00 format for hex
+  address=0x06;//use 0x00 format for hex
   vw=wiringPiI2CReadReg16(gyro_address,address);   
   //convert from 2's complement               
   if(vw>0x8000)
