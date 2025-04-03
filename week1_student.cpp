@@ -43,7 +43,7 @@ int main (int argc, char *argv[])
     while(1)
     {
       read_imu();    
-      
+      printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tr:%10.5f\tp:%10.5f\ty:%10.5f\n\r",imu_data[0],imu_data[1],imu_data[2],imu_data[3],imu_data[4],imu_data[5]);
     }
   
 }
