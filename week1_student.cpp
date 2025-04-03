@@ -94,34 +94,34 @@ void read_imu()
   //accel reads
 
   address=0x12;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(accel_address,address);    
+  ax=wiringPiI2CReadReg16(accel_address,address);    
   //convert from 2's complement
-  if(vw>0x8000)
+  if(ax>0x8000)
   {
-    vw=vw ^ 0xffff;
-    vw=-vw-1;
+    ax=ax ^ 0xffff;
+    ax=-ax-1;
   }          
-  imu_data[0]= ((vw - (-32768)) * (3 - (-3)) / (32767 - (-32768))) + (-3) - roll_calibration;//convert to g's  //figure this out 
+  imu_data[0]= ((ax - (-32768.0)) * (3.0 - (-3.0)) / (32767.0 - (-32768.0))) + (-3.0) - roll_calibration;//convert to g's  //figure this out 
   
   address=0x14;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(accel_address,address);   
+  ay=wiringPiI2CReadReg16(accel_address,address);   
   //convert from 2's complement
-  if(vw>0x8000)
+  if(ay>0x8000)
   {
-    vw=vw ^ 0xffff;
-    vw=-vw-1;
+    ay=ay ^ 0xffff;
+    ay=-ay-1;
   }          
-  imu_data[1]= ((vw - (-32768)) * (3 - (-3)) / (32767 - (-32768))) + (-3) - pitch_calibration;//convert to g's  //figure this out 
+  imu_data[1]= ((ay - (-32768.0)) * (3.0 - (-3.0)) / (32767.0 - (-32768.0))) + (-3.0) - pitch_calibration;//convert to g's  //figure this out 
   
   address=0x16;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(accel_address,address);   
+  az=wiringPiI2CReadReg16(accel_address,address);   
   //convert from 2's complement     
-  if(vw>0x8000)
+  if(az>0x8000)
   {
-    vw=vw ^ 0xffff;
-    vw=-vw-1;
+    az=az ^ 0xffff;
+    az=-az-1;
   }          
-  imu_data[2]= ((vw - (-32768)) * (3 - (-3)) / (32767 - (-32768))) + (-3) - accel_z_calibration;//convert to g's  //figure this out
+  imu_data[2]= ((az - (-32768.0)) * (3.0 - (-3.0)) / (32767.0 - (-32768.0))) + (-3.0) - accel_z_calibration;//convert to g's  //figure this out
   
   
      
