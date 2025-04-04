@@ -43,7 +43,9 @@ int main (int argc, char *argv[])
     while(1)
     {
       read_imu();    
-      printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tr:%10.5f\tp:%10.5f\ty:%10.5f\n\r",imu_data[0],imu_data[1],imu_data[2],imu_data[3],imu_data[4],imu_data[5]);
+      printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[0],imu_data[1],imu_data[2],pitch_angle, roll_angle);
+
+      // printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
     }
   
 }
@@ -54,13 +56,14 @@ void calibrate_imu()
   float x_gyro_sum = 0.0;
   float y_gyro_sum = 0.0;
   float z_gyro_sum = 0.0;
-  float x_accel_sum = 0.0;
-  float y_accel_sum = 0.0;
+  float roll_sum = 0.0;
+  float pitch_sum = 0.0;
   float z_accel_sum = 0.0;
   for (int i = 0; i < 1000; i++) {
     read_imu();
-    x_accel_sum += imu_data[0];
-    y_accel_sum += imu_data[1];
+    roll_sum += atan2(imu_data[2], imu_data[0])*180/M_PI;
+    pitch_sum += atan2(imu_data[1], imu_data[0])*180/M_PI;
+    printf("calibration \tp:%f\tr:%f\n\r", atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
     z_accel_sum += imu_data[2];
 
     x_gyro_sum += imu_data[3];
@@ -71,8 +74,8 @@ void calibrate_imu()
   x_gyro_calibration= x_gyro_sum/1000.0;
   y_gyro_calibration=y_gyro_sum/1000.0;
   z_gyro_calibration=z_gyro_sum/1000.0;
-  roll_calibration= x_accel_sum/1000.0;
-  pitch_calibration=y_accel_sum/1000.0;
+  roll_calibration= roll_sum/1000.0;
+  pitch_calibration= pitch_sum/1000.0;
   accel_z_calibration= z_accel_sum/1000.0;
 
 printf("calibration complete, %f %f %f %f %f %f\n\r",x_gyro_calibration,y_gyro_calibration,z_gyro_calibration,roll_calibration,pitch_calibration,accel_z_calibration);
@@ -101,7 +104,7 @@ void read_imu()
     vw=vw ^ 0xffff;
     vw=-vw-1;
   }          
-  imu_data[0]= (((float)vw)/32768 * 3) - roll_calibration;//convert to g's  //figure this out 
+  imu_data[0]= (((float)vw)/32768 * 3);//convert to g's  //figure this out 
   
   address=0x14;//use 0x00 format for hex
   vw=wiringPiI2CReadReg16(accel_address,address);   
@@ -111,7 +114,7 @@ void read_imu()
     vw=vw ^ 0xffff;
     vw=-vw-1;
   }          
-  imu_data[1]= (((float)vw)/32768 * 3) - pitch_calibration;//convert to g's  //figure this out 
+  imu_data[1]= (((float)vw)/32768 * 3);//convert to g's  //figure this out 
   
   address=0x16;//use 0x00 format for hex
   vw=wiringPiI2CReadReg16(accel_address,address);   
@@ -121,7 +124,7 @@ void read_imu()
     vw=vw ^ 0xffff;
     vw=-vw-1;
   }          
-  imu_data[2]= (((float)vw)/32768 * 3)- accel_z_calibration;//convert to g's  //figure this out
+  imu_data[2]= -1*(((float)vw)/32768 * 3);//convert to g's  //figure this out
   
   
      
@@ -158,6 +161,8 @@ void read_imu()
   }          
   imu_data[5]= ((vw - (-32768)) * (1000 - (-1000)) / (32767 - (-32768))) + (-1000) - z_gyro_calibration;//convert to degrees/sec  
 
+  pitch_angle = (atan2(imu_data[1], imu_data[0])*180/M_PI) - pitch_calibration;
+  roll_angle = (atan2(imu_data[2], imu_data[0])*180/M_PI) - roll_calibration;
 
 }
 
