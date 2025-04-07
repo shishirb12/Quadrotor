@@ -32,6 +32,7 @@ struct timespec te;
 float yaw=0;
 float pitch_angle=0;
 float roll_angle=0;
+char bullshit[100];
 
  
 int main (int argc, char *argv[])
@@ -63,7 +64,7 @@ void calibrate_imu()
     read_imu();
     roll_sum += atan2(imu_data[2], imu_data[0])*180/M_PI;
     pitch_sum += atan2(imu_data[1], imu_data[0])*180/M_PI;
-    printf("calibration \tp:%f\tr:%f\n\r", atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
+    sprintf(bullshit, "bullshit \tp:%f\tr:%f\n\r", atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
     z_accel_sum += imu_data[2];
 
     x_gyro_sum += imu_data[3];
