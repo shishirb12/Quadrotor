@@ -267,7 +267,7 @@ void update_filter()
   old_pitch = pitch_angle;
   roll_accel = (atan2(imu_data[2], imu_data[0])*180/M_PI) - roll_calibration;
   intl_roll = (imu_data[4]*imu_diff + old_roll);
-  roll_angle = roll_accel * A + (1-A)*;
+  roll_angle = roll_accel * A + (1-A)*intl_roll;
   old_roll = roll_angle;
 }
 
