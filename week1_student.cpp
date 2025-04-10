@@ -38,14 +38,78 @@ float intl_pitch = 0;
 float intl_roll = 0;
 float A = 0.02;
 
+//global variables to add
+
+struct Joystick
+{
+  int key0;
+  int key1;
+  int key2;
+  int key3;
+  int pitch;
+  int roll;
+  int yaw;
+  int thrust;
+  int sequence_num;
+};
+
+
+Joystick* shared_memory; 
+int run_program=1;
+
+//function to add
+void setup_joystick()
+{
+
+  int segment_id;   
+  struct shmid_ds shmbuffer; 
+  int segment_size; 
+  const int shared_segment_size = 0x6400; 
+  int smhkey=33222;
+  
+  /* Allocate a shared memory segment.  */ 
+  segment_id = shmget (smhkey, shared_segment_size,IPC_CREAT | 0666); 
+  /* Attach the shared memory segment.  */ 
+  shared_memory = (Joystick*) shmat (segment_id, 0, 0); 
+  printf ("shared memory attached at address %p\n", shared_memory); 
+  /* Determine the segment's size. */ 
+  shmctl (segment_id, IPC_STAT, &shmbuffer); 
+  segment_size  =               shmbuffer.shm_segsz; 
+  printf ("segment size: %d\n", segment_size); 
+  /* Write a string to the shared memory segment.  */ 
+  //sprintf (shared_memory, "test!!!!."); 
+
+}
+
+
+//when cntrl+c pressed, kill motors
+
+void trap(int signal)
+
+{
+
+   
+ 
+   printf("ending program\n\r");
+
+   run_program=0;
+}
+
  
 int main (int argc, char *argv[])
 {
 
     setup_imu();
     calibrate_imu();    
-    
-    while(1)
+    //in main before while(1) loop add...
+      setup_joystick();
+      signal(SIGINT, &trap);
+
+      //to refresh values from shared memory first 
+      Joystick joystick_data=*shared_memory;
+
+      //be sure to update the while(1) in main to use run_program instead 
+    while(run_program == 1)
     {
       read_imu();    
       printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],pitch_angle, roll_angle);
