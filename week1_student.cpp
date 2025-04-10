@@ -31,6 +31,8 @@ long time_prev;
 struct timespec te;
 float yaw=0;
 float pitch_angle=0;
+float pitch_accel = 0;
+float roll_accel = 0;
 float roll_angle=0;
 float old_roll = 0;
 float old_pitch = 0;
