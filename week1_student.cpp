@@ -32,7 +32,11 @@ struct timespec te;
 float yaw=0;
 float pitch_angle=0;
 float roll_angle=0;
-char bullshit[100];
+float old_roll = 0;
+float old_pitch = 0;
+float intl_pitch = 0;
+float intl_roll = 0;
+float A = 0.02;
 
  
 int main (int argc, char *argv[])
@@ -62,9 +66,9 @@ void calibrate_imu()
   float z_accel_sum = 0.0;
   for (int i = 0; i < 1000; i++) {
     read_imu();
+    // reads IMU values and adds to running sum
     roll_sum += atan2(imu_data[2], imu_data[0])*180/M_PI;
     pitch_sum += atan2(imu_data[1], imu_data[0])*180/M_PI;
-    // sprintf(bullshit, "bullshit \tp:%f\tr:%f\n\r", atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
     z_accel_sum += imu_data[2];
 
     x_gyro_sum += imu_data[3];
@@ -72,6 +76,7 @@ void calibrate_imu()
     z_gyro_sum += imu_data[5];
   }
 
+  // averages past 1000 IMU values and sets as calibration variables
   x_gyro_calibration= x_gyro_sum/1000.0;
   y_gyro_calibration=y_gyro_sum/1000.0;
   z_gyro_calibration=z_gyro_sum/1000.0;
@@ -162,8 +167,15 @@ void read_imu()
   }          
   imu_data[5]= -(((vw - (-32768)) * (1000 - (-1000)) / (32767 - (-32768))) + (-1000) - z_gyro_calibration);//convert to degrees/sec  
 
-  pitch_angle = (atan2(imu_data[1], imu_data[0])*180/M_PI) - pitch_calibration;
-  roll_angle = (atan2(imu_data[2], imu_data[0])*180/M_PI) - roll_calibration;
+  pitch_accel = (atan2(imu_data[1], imu_data[0])*180/M_PI) - pitch_calibration;
+  intl_pitch = (imu_data[5] + old_pitch)
+  pitch_angle = pitch_accel * A + (1-A)*intl_pitch;
+  old_pitch = pitch_angle;
+  roll_accel = (atan2(imu_data[2], imu_data[0])*180/M_PI) - roll_calibration;
+  intl_roll = (imu_data[4] + old_roll)
+  roll_angle = roll_accel * A + (1-A)*;
+  old_roll = roll_angle;
+
 
 }
 
