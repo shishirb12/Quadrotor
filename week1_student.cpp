@@ -112,8 +112,10 @@ int main (int argc, char *argv[])
     while(run_program == 1)
     {
       read_imu();    
-      printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],pitch_angle, roll_angle);
-
+      update_filter();
+      //printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],pitch_angle, roll_angle);
+      printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
+      
       // printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
     }
   
