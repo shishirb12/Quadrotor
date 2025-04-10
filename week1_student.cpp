@@ -134,7 +134,7 @@ int main (int argc, char *argv[])
       read_imu();    
       update_filter();
       std::vector<float> pr_data = {pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle};
-      pitchroll.push_back(pr_data)
+      pitchroll.push_back(pr_data);
       //printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],pitch_angle, roll_angle);
       printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
       
