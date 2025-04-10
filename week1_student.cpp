@@ -232,14 +232,7 @@ void read_imu()
   }          
   imu_data[5]= -(((vw - (-32768)) * (1000 - (-1000)) / (32767 - (-32768))) + (-1000) - z_gyro_calibration);//convert to degrees/sec  
 
-  pitch_accel = (atan2(imu_data[1], imu_data[0])*180/M_PI) - pitch_calibration;
-  intl_pitch = (imu_data[5] + old_pitch)
-  pitch_angle = pitch_accel * A + (1-A)*intl_pitch;
-  old_pitch = pitch_angle;
-  roll_accel = (atan2(imu_data[2], imu_data[0])*180/M_PI) - roll_calibration;
-  intl_roll = (imu_data[4] + old_roll)
-  roll_angle = roll_accel * A + (1-A)*;
-  old_roll = roll_angle;
+  
 
 
 }
@@ -264,6 +257,14 @@ void update_filter()
   time_prev=time_curr;
   
   //comp. filter for roll, pitch here: 
+  pitch_accel = (atan2(imu_data[1], imu_data[0])*180/M_PI) - pitch_calibration;
+  intl_pitch = (imu_data[5]*imu_diff + old_pitch)
+  pitch_angle = pitch_accel * A + (1-A)*intl_pitch;
+  old_pitch = pitch_angle;
+  roll_accel = (atan2(imu_data[2], imu_data[0])*180/M_PI) - roll_calibration;
+  intl_roll = (imu_data[4]*imu_diff + old_roll)
+  roll_angle = roll_accel * A + (1-A)*;
+  old_roll = roll_angle;
 }
 
 int setup_imu()
