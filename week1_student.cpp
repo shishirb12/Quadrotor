@@ -196,7 +196,8 @@ void read_imu()
   }          
   imu_data[2]= (((float)vw)/32768 * 3);//convert to g's  //figure this out
   
-  
+
+
      
 
   //gyro reads
@@ -243,6 +244,27 @@ void read_imu()
 
 }
 
+
+void update_filter()
+{
+
+  //get current time in nanoseconds
+  timespec_get(&te,TIME_UTC);
+  time_curr=te.tv_nsec;
+  //compute time since last execution
+  float imu_diff=time_curr-time_prev;           
+  
+  //check for rollover
+  if(imu_diff<=0)
+  {
+    imu_diff+=1000000000;
+  }
+  //convert to seconds
+  imu_diff=imu_diff/1000000000;
+  time_prev=time_curr;
+  
+  //comp. filter for roll, pitch here: 
+}
 
 int setup_imu()
 {
