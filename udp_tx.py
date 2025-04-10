@@ -95,7 +95,7 @@ else:
             
             hb=sequence_num.to_bytes(1)
             tx_data=joy_data+hb
-            udp_socket.sendto(tx_data, ("10.106.2.68", 8080))
+            udp_socket.sendto(tx_data, ("10.42.0.1", 8080))
             print("tx",a,b,c,d,e,f,g,h,sequence_num)
         # Close the socket
 udp_socket.close()

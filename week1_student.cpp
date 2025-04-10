@@ -8,9 +8,9 @@
 #include <signal.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
-#include <iostream>
-#include <vector>
-#include <fstream>
+// #include <iostream>
+// #include <vector>
+// #include <fstream>
 
 //gcc -o week1 week_1_student.cpp -lwiringPi  -lm
 
@@ -44,7 +44,7 @@ float intl_roll = 0;
 float A = 0.02;
 float old_gyro_roll;
 float old_gyro_pitch;
-std::vector<std::vector<float>> pitchroll;
+// std::vector<std::vector<float>> pitchroll;
 //global variables to add
 
 struct Joystick
@@ -94,23 +94,28 @@ void setup_joystick()
 void trap(int signal)
 
 {
-   std::ofstream file("imu_output.csv");
+  // for week 2 graphing
+  //  std::ofstream file("imu_output.csv");
 
-  if (file.is_open()) {
-        file << "pa,pg,p,ra,rg,r\n";
+  // if (file.is_open()) {
+  //       file << "pa,pg,p,ra,rg,r\n";
 
-        for (const auto& row : pitchroll) {
-            for (size_t i = 0; i < row.size(); ++i) {
-                file << row[i];
-                if (i != row.size() - 1) file << ",";
-            }
-            file << "\n";
-        }
+  //       for (const auto& row : pitchroll) {
+  //           for (size_t i = 0; i < row.size(); ++i) {
+  //               file << row[i];
+  //               if (i != row.size() - 1) file << ",";
+  //           }
+  //           file << "\n";
+  //       }
 
-        file.close();
-    } else {
-        std::cerr << "Failed to open file.\n";
-    }
+  //       file.close();
+  //   } else {
+  //       std::cerr << "Failed to open file.\n";
+  //   }
+
+
+
+
    printf("ending program\n\r");
    run_program=0;
 }
@@ -120,7 +125,7 @@ int main (int argc, char *argv[])
 {
 
     setup_imu();
-    //calibrate_imu();    
+    calibrate_imu();    
     //in main before while(1) loop add...
       setup_joystick();
       signal(SIGINT, &trap);
@@ -133,14 +138,27 @@ int main (int argc, char *argv[])
     {
       read_imu();    
       update_filter();
-      std::vector<float> pr_data = {pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle};
-      pitchroll.push_back(pr_data)
+      // std::vector<float> pr_data = {pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle,imu_data[4], imu_data[5]};
+      // pitchroll.push_back(pr_data);
       //printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],pitch_angle, roll_angle);
-      printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
+      //printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
       
       // printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
+    
+      if(joystick_data.key0 == 1){
+        printf("button 0 pressed");
+      }else if(joystick_data.key1 == 1){
+        printf("button 1 pressed");
+      }else if(joystick_data.key2 == 1){
+        printf("button 2 pressed");
+      }else if(joystick_data.key3 == 1){
+        printf("button 3 pressed");
+      }else{
+        ;
+      }
+    
     }
-  
+  return 0;
 }
 
 void calibrate_imu()
@@ -227,6 +245,10 @@ void read_imu()
      
 
   //gyro reads
+  x_gyro_calibration = 0;
+  y_gyro_calibration = 0;
+  z_gyro_calibration = 0;
+  
 
   address=0x02;//use 0x00 format for hex
   vw=wiringPiI2CReadReg16(gyro_address,address);   
@@ -285,12 +307,14 @@ void update_filter()
   //comp. filter for roll, pitch here: 
   pitch_accel = (atan2(imu_data[1], imu_data[0])*180/M_PI) - pitch_calibration;
   intl_pitch = (imu_data[5]*imu_diff + old_pitch);
-  pitch_angle = pitch_accel * A + (1-A)*intl_pitch;
-  old_pitch = pitch_angle;
+  pitch_angle = pitch_accel * A + (1-A)*(imu_data[5]*imu_diff + pitch_angle);
+  old_pitch = intl_pitch;
+  
+  
   roll_accel = (atan2(imu_data[2], imu_data[0])*180/M_PI) - roll_calibration;
   intl_roll = (imu_data[4]*imu_diff + old_roll);
-  roll_angle = roll_accel * A + (1-A)*intl_roll;
-  old_roll = roll_angle;
+  roll_angle = roll_accel * A + (1-A)*(imu_data[4]*imu_diff + roll_angle);
+  old_roll = intl_roll;
 }
 
 int setup_imu()
