@@ -42,6 +42,8 @@ float old_pitch = 0;
 float intl_pitch = 0;
 float intl_roll = 0;
 float A = 0.02;
+float old_gyro_roll;
+float old_gyro_pitch;
 std::vector<std::vector<float>> pitchroll;
 //global variables to add
 
@@ -118,7 +120,7 @@ int main (int argc, char *argv[])
 {
 
     setup_imu();
-    calibrate_imu();    
+    //calibrate_imu();    
     //in main before while(1) loop add...
       setup_joystick();
       signal(SIGINT, &trap);
@@ -184,6 +186,8 @@ void read_imu()
   int vh=0;
   int vl=0;
   int vw=0;
+  old_gyro_pitch = imu_data[5];
+  old_gyro_roll = imu_data[4];
 
 
   //accel reads
