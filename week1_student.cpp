@@ -23,7 +23,7 @@ float x_gyro_calibration=0;
 float y_gyro_calibration=0;
 float z_gyro_calibration=0;
 float roll_calibration=0;
-float pitch_calibration=0;
+float pitch_calibration=0; 
 float accel_z_calibration=0;
 float imu_data[6]; //accel xyz,  gyro xyz, 
 long time_curr;
@@ -44,7 +44,7 @@ int main (int argc, char *argv[])
     while(1)
     {
       read_imu();    
-      printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[0],imu_data[1],imu_data[2],pitch_angle, roll_angle);
+      printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],pitch_angle, roll_angle);
 
       // printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
     }
@@ -64,7 +64,7 @@ void calibrate_imu()
     read_imu();
     roll_sum += atan2(imu_data[2], imu_data[0])*180/M_PI;
     pitch_sum += atan2(imu_data[1], imu_data[0])*180/M_PI;
-    sprintf(bullshit, "bullshit \tp:%f\tr:%f\n\r", atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
+    // sprintf(bullshit, "bullshit \tp:%f\tr:%f\n\r", atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
     z_accel_sum += imu_data[2];
 
     x_gyro_sum += imu_data[3];
@@ -125,7 +125,7 @@ void read_imu()
     vw=vw ^ 0xffff;
     vw=-vw-1;
   }          
-  imu_data[2]= -1*(((float)vw)/32768 * 3);//convert to g's  //figure this out
+  imu_data[2]= (((float)vw)/32768 * 3);//convert to g's  //figure this out
   
   
      
@@ -160,7 +160,7 @@ void read_imu()
     vw=vw ^ 0xffff;
     vw=-vw-1;
   }          
-  imu_data[5]= ((vw - (-32768)) * (1000 - (-1000)) / (32767 - (-32768))) + (-1000) - z_gyro_calibration;//convert to degrees/sec  
+  imu_data[5]= -(((vw - (-32768)) * (1000 - (-1000)) / (32767 - (-32768))) + (-1000) - z_gyro_calibration);//convert to degrees/sec  
 
   pitch_angle = (atan2(imu_data[1], imu_data[0])*180/M_PI) - pitch_calibration;
   roll_angle = (atan2(imu_data[2], imu_data[0])*180/M_PI) - roll_calibration;
