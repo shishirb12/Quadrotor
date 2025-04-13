@@ -14,7 +14,9 @@
 
 //gcc -o week1 week_1_student.cpp -lwiringPi  -lm
 
-
+#define GYRO_MAX 300
+#define ROLL_MAX 45
+#define PITCH_MAX 45
 int setup_imu();
 void calibrate_imu();      
 void read_imu();    
@@ -31,6 +33,8 @@ float accel_z_calibration=0;
 float imu_data[6]; //accel xyz,  gyro xyz, 
 long time_curr;
 long time_prev;
+long joy_prev;
+long joy_curr;
 struct timespec te;
 float yaw=0;
 float pitch_angle=0;
@@ -132,6 +136,7 @@ int main (int argc, char *argv[])
 
       //to refresh values from shared memory first 
       Joystick joystick_data=*shared_memory;
+      prev_sequence = joystick_data.sequence_num;
 
       //be sure to update the while(1) in main to use run_program instead 
     while(run_program == 1)
@@ -142,20 +147,11 @@ int main (int argc, char *argv[])
       // pitchroll.push_back(pr_data);
       //printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],pitch_angle, roll_angle);
       //printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
-      
-      // printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
     
-      if(joystick_data.key0 == 1){
-        printf("button 0 pressed");
-      }else if(joystick_data.key1 == 1){
-        printf("button 1 pressed");
-      }else if(joystick_data.key2 == 1){
-        printf("button 2 pressed");
-      }else if(joystick_data.key3 == 1){
-        printf("button 3 pressed");
-      }else{
-        ;
-      }
+      // printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
+      joystick_data = *shared_memory;
+      safety_check(joystick_data, prev_sequence);
+      prev_sequence = joystick_data.sequence_num;
     
     }
   return 0;
@@ -353,6 +349,42 @@ int setup_imu()
     sleep(1);
   }
   return 0;
+}
+
+void safety_check(Joystick joystick_data, int prev_sequence){
+
+  //get current time in nanoseconds
+  timespec_get(&te,TIME_UTC);
+  joy_curr=te.tv_nsec;
+  //compute time since last execution
+  float joy_diff=joy_curr-joy_prev;           
+  
+  //check for rollover
+  if(joy_diff<=0)
+  {
+    joy_diff+=1000000000;
+  }
+  //convert to seconds
+  joy_diff=joy_diff/1000000000;
+  if(joystick_data.sequence_num != prev_sequence){
+    joy_prev = joy_curr;
+  }
+  if (joy_diff > 0.35){
+    run_program = 0;
+  }
+  if(abs(imu_data[3]) > 300 || abs(imu_data[4]) > 300 || abs(imu_data[5]) > 300){
+    run_program = 0;
+  }
+  if(abs(roll_angle) > 45){
+    run_program = 0;
+  }
+  if(abs(pitch_angle) > 45){
+    run_program = 0;
+  }
+  if(joystick_data.key1 == 1){
+    run_program = 0;
+  }
+
 }
 
 
