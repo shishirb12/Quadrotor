@@ -17,10 +17,12 @@
 #define GYRO_MAX 300
 #define ROLL_MAX 45
 #define PITCH_MAX 45
+#define TIMEOUT 0.35
 int setup_imu();
 void calibrate_imu();      
 void read_imu();    
 void update_filter();
+
 
 //global variables
 int accel_address,gyro_address;
@@ -35,6 +37,7 @@ long time_curr;
 long time_prev;
 long joy_prev;
 long joy_curr;
+float joy_diff;
 struct timespec te;
 float yaw=0;
 float pitch_angle=0;
@@ -48,6 +51,8 @@ float intl_roll = 0;
 float A = 0.02;
 float old_gyro_roll;
 float old_gyro_pitch;
+int prev_sequence = 0;
+bool sequence_entered = 0;
 // std::vector<std::vector<float>> pitchroll;
 //global variables to add
 
@@ -67,6 +72,8 @@ struct Joystick
 
 Joystick* shared_memory; 
 int run_program=1;
+
+void safety_check(Joystick joystick_data, int prev_sequence);
 
 //function to add
 void setup_joystick()
@@ -136,7 +143,7 @@ int main (int argc, char *argv[])
 
       //to refresh values from shared memory first 
       Joystick joystick_data=*shared_memory;
-      prev_sequence = joystick_data.sequence_num;
+      int prev_sequence = joystick_data.sequence_num;
 
       //be sure to update the while(1) in main to use run_program instead 
     while(run_program == 1)
@@ -145,14 +152,16 @@ int main (int argc, char *argv[])
       update_filter();
       // std::vector<float> pr_data = {pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle,imu_data[4], imu_data[5]};
       // pitchroll.push_back(pr_data);
-      //printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],pitch_angle, roll_angle);
       //printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
     
-      // printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
+      //printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
       joystick_data = *shared_memory;
+
       safety_check(joystick_data, prev_sequence);
+      // printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\tpsn:%d\tsn:%d\t",imu_data[3],imu_data[4],imu_data[5],pitch_angle, roll_angle, prev_sequence, joystick_data.sequence_num);
+
       prev_sequence = joystick_data.sequence_num;
-    
+
     }
   return 0;
 }
@@ -353,38 +362,55 @@ int setup_imu()
 
 void safety_check(Joystick joystick_data, int prev_sequence){
 
-  //get current time in nanoseconds
-  timespec_get(&te,TIME_UTC);
-  joy_curr=te.tv_nsec;
-  //compute time since last execution
-  float joy_diff=joy_curr-joy_prev;           
+  if (joystick_data.sequence_num == prev_sequence){
+    if (!sequence_entered)
+    {
+      timespec_get(&te,TIME_UTC);
+      joy_curr=te.tv_nsec;
+      joy_prev = joy_curr;
+      sequence_entered = 1;
+    }
+    //get current time in nanoseconds
+    timespec_get(&te,TIME_UTC);
+    joy_curr=te.tv_nsec;
+    //compute time since last execution
+    joy_diff=joy_curr-joy_prev;           
+    
+    //check for rollover
+    if(joy_diff<=0)
+    {
+      joy_diff+=1000000000;
+    }
   
-  //check for rollover
-  if(joy_diff<=0)
-  {
-    joy_diff+=1000000000;
-  }
   //convert to seconds
   joy_diff=joy_diff/1000000000;
-  if(joystick_data.sequence_num != prev_sequence){
-    joy_prev = joy_curr;
+  // printf("jd:%10.5f\r\n", joy_diff);
+
+    // if 0.35 seconds have elapsed, die
+    if(joy_diff > TIMEOUT){
+      printf("timeout failure\r\n");
+      run_program = 0;
+    }
   }
-  if (joy_diff > 0.35){
+  else{
+    sequence_entered = 0;
+  }
+  if(abs(imu_data[3]) > GYRO_MAX || abs(imu_data[4]) > GYRO_MAX || abs(imu_data[5]) > GYRO_MAX){
+    printf("gyro rate failure\r\n");
     run_program = 0;
   }
-  if(abs(imu_data[3]) > 300 || abs(imu_data[4]) > 300 || abs(imu_data[5]) > 300){
+  if(abs(roll_angle) > ROLL_MAX){
+    printf("roll angle failure\r\n");
     run_program = 0;
   }
-  if(abs(roll_angle) > 45){
-    run_program = 0;
-  }
-  if(abs(pitch_angle) > 45){
+  if(abs(pitch_angle) > PITCH_MAX){
+    printf("pitch angle failure\r\n");
     run_program = 0;
   }
   if(joystick_data.key1 == 1){
+    printf("you pressed B failure\r\n");
     run_program = 0;
   }
 
+  
 }
-
-
