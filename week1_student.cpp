@@ -29,7 +29,6 @@ int setup_imu();
 void calibrate_imu();      
 void read_imu();    
 void update_filter();
-void set_motor(Joystick joystick_data);
 
 
 //global variables
@@ -63,7 +62,7 @@ int prev_sequence = 0;
 bool sequence_entered = 0;
 int motor_commands[4];
 float p_err;
-int J_thust;
+int J_thrust;
 int motor_thrust;
 int J_pitch;
 float desired_pitch;
@@ -86,6 +85,9 @@ struct Joystick
 
 Joystick* shared_memory; 
 int run_program=1;
+
+void set_motor(Joystick joystick_data);
+
 
 void safety_check(Joystick joystick_data, int prev_sequence);
 
@@ -152,7 +154,7 @@ void trap(int signal)
 int main (int argc, char *argv[])
 {
     FILE *fp;
-    fp = fp.open("output.csv", "w");
+    fp = fopen("output.csv", "w");
     fprintf(fp, "Motor1,Motor2,Motor3,Motor4,Desired Thrust, Desired Pitch, Pitch Angle\n");
     setup_imu();
     calibrate_imu();    
@@ -177,7 +179,7 @@ int main (int argc, char *argv[])
       
       
       prev_sequence = joystick_data.sequence_num;
-      set_motor();
+      set_motor(Joystick joystick_data);
       printf("M1:%d\tM2:%d\tM3:%d\tM4:%d", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3]);
       fprintf(fp, "%f,%f,%f,%f,%f,%f,%f", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3], motor_thrust, desired_pitch, pitch_angle);
     }
