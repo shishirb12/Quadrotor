@@ -14,13 +14,13 @@
 
 //gcc -o week1 week_1_student.cpp -lwiringPi  -lm
 
-#define GYRO_MAX 300
+#define GYRO_MAX 3000
 #define ROLL_MAX 45
 #define PITCH_MAX 45
-#define TIMEOUT 0.35
+#define TIMEOUT 0.75
 #define THRUST_NEUTRAL 100
 #define THRUST_AMPLITUDE 100
-#define PITCH_AMPLITUDE 100
+#define PITCH_AMPLITUDE 10
 #define P_GAIN 10
 #define D_GAIN 1
 #define I_GAIN 0.1
@@ -29,10 +29,11 @@ int setup_imu();
 void calibrate_imu();      
 void read_imu();    
 void update_filter();
-void set_motor(Joystick joystick_data);
+
 
 
 //global variables
+FILE *fp;
 int accel_address,gyro_address;
 float x_gyro_calibration=0;
 float y_gyro_calibration=0;
@@ -63,10 +64,11 @@ int prev_sequence = 0;
 bool sequence_entered = 0;
 int motor_commands[4];
 float p_err;
-int J_thust;
+int J_thrust;
 int motor_thrust;
 int J_pitch;
 float desired_pitch;
+float I_pitch = 0;
 // std::vector<std::vector<float>> pitchroll;
 //global variables to add
 
@@ -88,6 +90,7 @@ Joystick* shared_memory;
 int run_program=1;
 
 void safety_check(Joystick joystick_data, int prev_sequence);
+void set_motor(Joystick joystick_data);
 
 //function to add
 void setup_joystick()
@@ -137,7 +140,7 @@ void trap(int signal)
   //   } else {
   //       std::cerr << "Failed to open file.\n";
   //   }
-
+  fclose(fp);
 
   // set motors to 0 when ending
   motor_commands[0] = 0;
@@ -148,12 +151,12 @@ void trap(int signal)
    run_program=0;
 }
 
- 
+
 int main (int argc, char *argv[])
 {
-    FILE *fp;
-    fp = fp.open("output.csv", "w");
-    fprintf(fp, "Motor1,Motor2,Motor3,Motor4,Desired Thrust, Desired Pitch, Pitch Angle\n");
+    
+    fp = fopen("output.csv", "w");
+    fprintf(fp, "Motor1, Motor2, Pitch Angle, Desired Pitch, Thrust\n");
     setup_imu();
     calibrate_imu();    
     //in main before while(1) loop add...
@@ -177,9 +180,9 @@ int main (int argc, char *argv[])
       
       
       prev_sequence = joystick_data.sequence_num;
-      set_motor();
-      printf("M1:%d\tM2:%d\tM3:%d\tM4:%d", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3]);
-      fprintf(fp, "%f,%f,%f,%f,%f,%f,%f", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3], motor_thrust, desired_pitch, pitch_angle);
+      set_motor(joystick_data);
+      printf("M1:%d\t\tM2:%d\t\tM3:%d\t\tM4:%d\r\n", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3]);
+      fprintf(fp, "%d,%d,%f,%f, %d\n", motor_commands[0], motor_commands[1], 10*pitch_angle, 10*desired_pitch, motor_thrust);
     }
   return 0;
 }
@@ -345,14 +348,59 @@ void set_motor(Joystick joystick_data){
   J_thrust = joystick_data.thrust;
   J_pitch = joystick_data.pitch;
   
-  desired_pitch = (((float)J_pitch - (0)) * (PITCH_AMPLITUDE - (-PITCH_AMPLITUDE)) / (255 - (0))) + (0);
-  motor_thrust = THRUST_NEUTRAL + THRUST_AMPLITUDE* (int)(((float)(128-J_thrust)/128));
+  desired_pitch = (  ((float)J_pitch) * (PITCH_AMPLITUDE) / (128.0)  ) - PITCH_AMPLITUDE;
+  motor_thrust = THRUST_NEUTRAL + THRUST_AMPLITUDE* (((float)(128.0-J_thrust)/128.0));
   p_err = pitch_angle - desired_pitch;
+  
+  // p_err = 0;
   // milestone 1
-  motor_commands[0] = motor_thrust + P_GAIN*p_err;
-  motor_commands[2] = motor_thrust + P_GAIN*p_err;
-  motor_commands[1] = motor_thrust - P_GAIN*p_err;
-  motor_commands[3] = motor_thrust - P_GAIN*p_err;
+  // motor_commands[0] = motor_thrust - P_GAIN*p_err;
+  // motor_commands[2] = motor_thrust - P_GAIN*p_err;
+  // motor_commands[1] = motor_thrust + P_GAIN*p_err;
+  // motor_commands[3] = motor_thrust + P_GAIN*p_err;
+  
+  /**
+  // milestone 2
+  motor_commands[0] = motor_thrust - D_GAIN*imu_data[5];
+  motor_commands[2] = motor_thrust - D_GAIN*imu_data[5];
+  motor_commands[1] = motor_thrust + D_GAIN*imu_data[5];
+  motor_commands[3] = motor_thrust + D_GAIN*imu_data[5];
+  
+  // milestone 3
+  I_pitch += I_GAIN*p_err;
+  
+  if(I_pitch > I_SATURATE){
+    I_pitch = I_SATURATE;
+  }else if(I_pitch < -I_SATURATE){
+    I_pitch = -I_SATURATE;
+  }
+  motor_commands[0] = motor_thrust - I_pitch;
+  motor_commands[2] = motor_thrust - I_pitch;
+  motor_commands[1] = motor_thrust + I_pitch;
+  motor_commands[3] = motor_thrust + I_pitch;
+  **/
+  
+  // milestone 4
+  I_pitch += I_GAIN*p_err;
+  
+  if(I_pitch > I_SATURATE){
+    I_pitch = I_SATURATE;
+  }else if(I_pitch < -I_SATURATE){
+    I_pitch = -I_SATURATE;
+  }
+  motor_commands[0] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch;
+  motor_commands[2] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch;
+  motor_commands[1] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch;
+  motor_commands[3] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch;
+  
+  
+  for(int i = 0; i < 4; i++){
+    if(motor_commands[i] > 2000){
+      motor_commands[i] = 2000;
+    }else if(motor_commands[i] < 0){
+      motor_commands[i] = 0;
+    }
+  }
 }
 
 int setup_imu()
