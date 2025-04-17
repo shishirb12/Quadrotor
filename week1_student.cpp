@@ -18,10 +18,18 @@
 #define ROLL_MAX 45
 #define PITCH_MAX 45
 #define TIMEOUT 0.35
+#define THRUST_NEUTRAL 100
+#define THRUST_AMPLITUDE 100
+#define PITCH_AMPLITUDE 100
+#define P_GAIN 10
+#define D_GAIN 1
+#define I_GAIN 0.1
+#define I_SATURATE 100
 int setup_imu();
 void calibrate_imu();      
 void read_imu();    
 void update_filter();
+void set_motor(Joystick joystick_data);
 
 
 //global variables
@@ -53,6 +61,12 @@ float old_gyro_roll;
 float old_gyro_pitch;
 int prev_sequence = 0;
 bool sequence_entered = 0;
+int motor_commands[4];
+float p_err;
+int J_thust;
+int motor_thrust;
+int J_pitch;
+float desired_pitch;
 // std::vector<std::vector<float>> pitchroll;
 //global variables to add
 
@@ -125,8 +139,11 @@ void trap(int signal)
   //   }
 
 
-
-
+  // set motors to 0 when ending
+  motor_commands[0] = 0;
+  motor_commands[1] = 0;
+  motor_commands[2] = 0;
+  motor_commands[3] = 0;
    printf("ending program\n\r");
    run_program=0;
 }
@@ -134,7 +151,9 @@ void trap(int signal)
  
 int main (int argc, char *argv[])
 {
-
+    FILE *fp;
+    fp = fp.open("output.csv", "w");
+    fprintf(fp, "Motor1,Motor2,Motor3,Motor4,Desired Thrust, Desired Pitch, Pitch Angle\n");
     setup_imu();
     calibrate_imu();    
     //in main before while(1) loop add...
@@ -150,18 +169,17 @@ int main (int argc, char *argv[])
     {
       read_imu();    
       update_filter();
-      // std::vector<float> pr_data = {pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle,imu_data[4], imu_data[5]};
-      // pitchroll.push_back(pr_data);
       //printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
-    
-      //printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\n\r",imu_data[3],imu_data[4],imu_data[5],atan2(imu_data[1], imu_data[0])*180/M_PI, atan2(imu_data[2], imu_data[0])*180/M_PI);
       joystick_data = *shared_memory;
 
       safety_check(joystick_data, prev_sequence);
       // printf("x:%10.5f\ty:%10.5f\tz:%10.5f\tp:%10.5f\tr:%10.5f\tpsn:%d\tsn:%d\t",imu_data[3],imu_data[4],imu_data[5],pitch_angle, roll_angle, prev_sequence, joystick_data.sequence_num);
-
+      
+      
       prev_sequence = joystick_data.sequence_num;
-
+      set_motor();
+      printf("M1:%d\tM2:%d\tM3:%d\tM4:%d", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3]);
+      fprintf(fp, "%f,%f,%f,%f,%f,%f,%f", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3], motor_thrust, desired_pitch, pitch_angle);
     }
   return 0;
 }
@@ -320,6 +338,21 @@ void update_filter()
   intl_roll = (imu_data[4]*imu_diff + old_roll);
   roll_angle = roll_accel * A + (1-A)*(imu_data[4]*imu_diff + roll_angle);
   old_roll = intl_roll;
+}
+
+void set_motor(Joystick joystick_data){
+  // thrust
+  J_thrust = joystick_data.thrust;
+  J_pitch = joystick_data.pitch;
+  
+  desired_pitch = (((float)J_pitch - (0)) * (PITCH_AMPLITUDE - (-PITCH_AMPLITUDE)) / (255 - (0))) + (0);
+  motor_thrust = THRUST_NEUTRAL + THRUST_AMPLITUDE* (int)(((float)(128-J_thrust)/128));
+  p_err = pitch_angle - desired_pitch;
+  // milestone 1
+  motor_commands[0] = motor_thrust + P_GAIN*p_err;
+  motor_commands[2] = motor_thrust + P_GAIN*p_err;
+  motor_commands[1] = motor_thrust - P_GAIN*p_err;
+  motor_commands[3] = motor_thrust - P_GAIN*p_err;
 }
 
 int setup_imu()
