@@ -31,7 +31,6 @@ void read_imu();
 void update_filter();
 
 
-
 //global variables
 FILE *fp;
 int accel_address,gyro_address;
@@ -88,6 +87,9 @@ struct Joystick
 
 Joystick* shared_memory; 
 int run_program=1;
+
+void set_motor(Joystick joystick_data);
+
 
 void safety_check(Joystick joystick_data, int prev_sequence);
 void set_motor(Joystick joystick_data);
