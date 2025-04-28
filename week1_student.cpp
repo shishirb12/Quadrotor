@@ -17,7 +17,7 @@
 #define GYRO_MAX 3000
 #define ROLL_MAX 45
 #define PITCH_MAX 45
-#define TIMEOUT 0.75
+#define TIMEOUT 0.35
 #define THRUST_NEUTRAL 500
 #define THRUST_AMPLITUDE 100
 #define PITCH_AMPLITUDE 20
