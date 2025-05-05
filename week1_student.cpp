@@ -21,11 +21,16 @@
 #define THRUST_NEUTRAL 500
 #define THRUST_AMPLITUDE 100
 #define PITCH_AMPLITUDE 20
-#define P_GAIN 20
-#define D_GAIN 4
-#define I_GAIN 1
+#define ROLL_AMPLITUDE 20
+#define P_GAIN 0
+#define D_GAIN 0
+#define I_GAIN 0
+#define P_GAIN_ROLL 15
+#define D_GAIN_ROLL 0
+#define I_GAIN_ROLL 0
+#define I_SATURATE_ROLL 200
 #define I_SATURATE 200
-#define MOTOR_MAX 1000
+#define MOTOR_MAX 1200
 int setup_imu();
 void calibrate_imu();      
 void read_imu();    
@@ -68,7 +73,9 @@ int motor_thrust;
 int J_pitch;
 float desired_pitch;
 float I_pitch = 0;
+float I_roll = 0;
 int motor_address,accel_address,gyro_address;
+float desired_roll;
 // std::vector<std::vector<float>> pitchroll;
 //global variables to add
 
@@ -315,10 +322,13 @@ void set_motor(Joystick joystick_data){
   // thrust
   J_thrust = joystick_data.thrust;
   J_pitch = joystick_data.pitch;
+  J_roll = joystick_data.roll;
   
   desired_pitch = (  ((float)J_pitch) * (PITCH_AMPLITUDE) / (128.0)  ) - PITCH_AMPLITUDE;
+  desired_roll = (  ((float)J_roll) * (ROLL_AMPLITUDE) / (128.0)  ) - ROLL_AMPLITUDE;
   motor_thrust = THRUST_NEUTRAL + THRUST_AMPLITUDE* (((float)(128.0-J_thrust)/128.0));
   p_err = pitch_angle - desired_pitch;
+  r_err = roll_angle - desired_roll;
   
   // p_err = 0;
   // milestone 1
@@ -356,10 +366,18 @@ void set_motor(Joystick joystick_data){
   }else if(I_pitch < -I_SATURATE){
     I_pitch = -I_SATURATE;
   }
-  motor_commands[1] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch;
-  motor_commands[3] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch;
-  motor_commands[0] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch;
-  motor_commands[2] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch;
+
+  I_roll += I_GAIN_ROLL*r_err;
+  if(I_roll > I_SATURATE_ROLL){
+    I_roll = I_SATURATE_ROLL;
+  }else if(I_roll < -I_SATURATE_ROLL){
+    I_roll = -I_SATURATE_ROLL;
+  }
+
+  motor_commands[1] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll;
+  motor_commands[3] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll;
+  motor_commands[0] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll;
+  motor_commands[2] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll;
   
   
   for(int i = 0; i < 4; i++){
@@ -691,7 +709,7 @@ int main (int argc, char *argv[])
 {
     
     fp = fopen("output.csv", "w");  
-    fprintf(fp, "Front PWM, Back PWM, Pitch Angle, Desired Pitch");
+    fprintf(fp, "Front PWM, Back PWM, Pitch Angle, Desired Pitch\n");
     setup_imu();
     // calibrate_imu();    
     motor_enable();
