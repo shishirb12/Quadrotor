@@ -14,7 +14,7 @@
 
 //gcc -o week1 week_1_student.cpp -lwiringPi  -lm
 
-#define GYRO_MAX 3000
+#define GYRO_MAX 300
 #define ROLL_MAX 45
 #define PITCH_MAX 45
 #define TIMEOUT 0.75
@@ -22,12 +22,15 @@
 #define THRUST_AMPLITUDE 100
 #define PITCH_AMPLITUDE 20
 #define ROLL_AMPLITUDE 20
-#define P_GAIN 0
-#define D_GAIN 0
-#define I_GAIN 0
+#define P_GAIN 20
+#define D_GAIN 4
+#define I_GAIN 1
+// #define P_GAIN 0
+// #define D_GAIN 0
+// #define I_GAIN 0
 #define P_GAIN_ROLL 15
-#define D_GAIN_ROLL 0
-#define I_GAIN_ROLL 0
+#define D_GAIN_ROLL 6
+#define I_GAIN_ROLL 1
 #define I_SATURATE_ROLL 200
 #define I_SATURATE 200
 #define MOTOR_MAX 1200
@@ -68,14 +71,17 @@ int prev_sequence = 0;
 bool sequence_entered = 0;
 int motor_commands[4];
 float p_err;
+float r_err;
 int J_thrust;
 int motor_thrust;
 int J_pitch;
+int J_roll;
 float desired_pitch;
 float I_pitch = 0;
 float I_roll = 0;
 int motor_address,accel_address,gyro_address;
 float desired_roll;
+bool paused = 0;
 // std::vector<std::vector<float>> pitchroll;
 //global variables to add
 
@@ -376,8 +382,8 @@ void set_motor(Joystick joystick_data){
 
   motor_commands[1] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll;
   motor_commands[3] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll;
-  motor_commands[0] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll;
-  motor_commands[2] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll;
+  motor_commands[0] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll;
+  motor_commands[2] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll;
   
   
   for(int i = 0; i < 4; i++){
@@ -480,6 +486,15 @@ void safety_check(Joystick joystick_data, int prev_sequence){
   if(joystick_data.key1 == 1){
     printf("you pressed B failure\r\n");
     run_program = 0;
+  }
+  if(joystick_data.key0 == 1){
+    printf("paused\r\n");
+    paused = 1;
+    set_motors(0, 0, 0, 0);
+  }
+  if(joystick_data.key3 == 1){
+    printf("unpaused\r\n");
+    paused = 0;
   }
 
   
@@ -709,7 +724,7 @@ int main (int argc, char *argv[])
 {
     
     fp = fopen("output.csv", "w");  
-    fprintf(fp, "Front PWM, Back PWM, Pitch Angle, Desired Pitch\n");
+    fprintf(fp, "Front PWM, Back PWM, Roll Angle, Desired Roll, Motor Thrust\n");
     setup_imu();
     // calibrate_imu();    
     motor_enable();
@@ -729,12 +744,14 @@ int main (int argc, char *argv[])
       joystick_data = *shared_memory;
 
       safety_check(joystick_data, prev_sequence);
-      printf("\tpitch: %10.5f\tapitch: %10.5f\tdpitch: %10.5f\r\n", pitch_angle, pitch_accel, desired_pitch);
+      printf("\tm1: %d\tm2: %d\tm3: %d\tm4: %d\tpaused: %d\r\n", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3], paused);
       
       prev_sequence = joystick_data.sequence_num;
-      set_motor(joystick_data);
+      if(paused == 0){
+        set_motor(joystick_data);
+      }
       // printf("M1:%d\t\tM2:%d\t\tM3:%d\t\tM4:%d\r\n", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3]);
-      fprintf(fp, "%d,%d,%f,%f\n", motor_commands[0], motor_commands[1], 10*pitch_angle, 10*desired_pitch);
+      fprintf(fp, "%d,%d,%f,%f,%d\n", motor_commands[0], motor_commands[1], 10*roll_angle, 10*desired_roll, motor_thrust);
     }
   return 0;
 }
