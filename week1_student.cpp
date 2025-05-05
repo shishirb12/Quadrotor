@@ -691,7 +691,7 @@ int main (int argc, char *argv[])
 {
     
     fp = fopen("output.csv", "w");  
-    fprintf(fp, "Desired Pitch, Pitch Angle");
+    fprintf(fp, "Front PWM, Back PWM, Pitch Angle, Desired Pitch");
     setup_imu();
     calibrate_imu();    
     motor_enable();
@@ -716,7 +716,7 @@ int main (int argc, char *argv[])
       prev_sequence = joystick_data.sequence_num;
       set_motor(joystick_data);
       // printf("M1:%d\t\tM2:%d\t\tM3:%d\t\tM4:%d\r\n", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3]);
-      fprintf(fp, "%f,%f\n", 10*desired_pitch, 10*pitch_angle);
+      fprintf(fp, "%d,%d,%f,%f\n", motor_commands[0], motor_commands[1], 10*pitch_angle, 10*desired_pitch);
     }
   return 0;
 }
