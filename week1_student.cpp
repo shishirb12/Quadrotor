@@ -17,14 +17,14 @@
 #define GYRO_MAX 3000
 #define ROLL_MAX 45
 #define PITCH_MAX 45
-#define TIMEOUT 0.35
+#define TIMEOUT 0.75
 #define THRUST_NEUTRAL 500
 #define THRUST_AMPLITUDE 100
 #define PITCH_AMPLITUDE 20
 #define P_GAIN 20
 #define D_GAIN 4
-#define I_GAIN 0
-#define I_SATURATE 100
+#define I_GAIN 1
+#define I_SATURATE 200
 #define MOTOR_MAX 1000
 int setup_imu();
 void calibrate_imu();      
@@ -693,7 +693,7 @@ int main (int argc, char *argv[])
     fp = fopen("output.csv", "w");  
     fprintf(fp, "Front PWM, Back PWM, Pitch Angle, Desired Pitch");
     setup_imu();
-    calibrate_imu();    
+    // calibrate_imu();    
     motor_enable();
       setup_joystick();
       signal(SIGINT, &trap);
