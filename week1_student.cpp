@@ -22,15 +22,21 @@
 #define THRUST_AMPLITUDE 100
 #define PITCH_AMPLITUDE 20
 #define ROLL_AMPLITUDE 20
-#define P_GAIN 20
-#define D_GAIN 4
+#define P_GAIN 18
+#define D_GAIN 5
 #define I_GAIN 1
+// #define P_GAIN 12
+// #define D_GAIN 2.5
+// #define I_GAIN 1
 // #define P_GAIN 0
 // #define D_GAIN 0
 // #define I_GAIN 0
-#define P_GAIN_ROLL 15
-#define D_GAIN_ROLL 6
+#define P_GAIN_ROLL 12
+#define D_GAIN_ROLL 2.5
 #define I_GAIN_ROLL 1
+// #define P_GAIN_ROLL 0
+// #define D_GAIN_ROLL 0
+// #define I_GAIN_ROLL 0
 #define I_SATURATE_ROLL 200
 #define I_SATURATE 200
 #define MOTOR_MAX 1200
@@ -325,6 +331,7 @@ void update_filter()
 }
 
 void set_motor(Joystick joystick_data){
+  // printf("hello\r\n");
   // thrust
   J_thrust = joystick_data.thrust;
   J_pitch = joystick_data.pitch;
@@ -490,7 +497,6 @@ void safety_check(Joystick joystick_data, int prev_sequence){
   if(joystick_data.key0 == 1){
     printf("paused\r\n");
     paused = 1;
-    set_motors(0, 0, 0, 0);
   }
   if(joystick_data.key3 == 1){
     printf("unpaused\r\n");
@@ -724,7 +730,7 @@ int main (int argc, char *argv[])
 {
     
     fp = fopen("output.csv", "w");  
-    fprintf(fp, "Front PWM, Back PWM, Roll Angle, Desired Roll, Motor Thrust\n");
+    fprintf(fp, "Front PWM, Back PWM, Roll Angle, Desired Roll\n");
     setup_imu();
     // calibrate_imu();    
     motor_enable();
@@ -744,14 +750,18 @@ int main (int argc, char *argv[])
       joystick_data = *shared_memory;
 
       safety_check(joystick_data, prev_sequence);
-      printf("\tm1: %d\tm2: %d\tm3: %d\tm4: %d\tpaused: %d\r\n", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3], paused);
+      printf("\tmc1: %d\tmc2: %d\tpitch: %.3f\t\tdpitch: %.3f\n", motor_commands[0], motor_commands[2], 10*roll_angle, 10*desired_roll);
       
       prev_sequence = joystick_data.sequence_num;
+
+
       if(paused == 0){
         set_motor(joystick_data);
+      }else{
+        set_motors(1, 1, 1, 1);
       }
       // printf("M1:%d\t\tM2:%d\t\tM3:%d\t\tM4:%d\r\n", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3]);
-      fprintf(fp, "%d,%d,%f,%f,%d\n", motor_commands[0], motor_commands[1], 10*roll_angle, 10*desired_roll, motor_thrust);
+      fprintf(fp, "%d,%d,%f,%f\n", motor_commands[0], motor_commands[2], 10*roll_angle, 10*desired_roll);
     }
   return 0;
 }
