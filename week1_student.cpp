@@ -14,14 +14,19 @@
 
 //gcc -o week1 week_1_student.cpp -lwiringPi  -lm
 
+// Safety Constants
 #define GYRO_MAX 300
 #define ROLL_MAX 45
 #define PITCH_MAX 45
 #define TIMEOUT 0.75
+
+// Controller Constants
 #define THRUST_NEUTRAL 500
 #define THRUST_AMPLITUDE 100
 #define PITCH_AMPLITUDE 20
 #define ROLL_AMPLITUDE 20
+
+// Pitch PID Gains
 #define P_GAIN 18
 #define D_GAIN 5
 #define I_GAIN 1
@@ -31,6 +36,9 @@
 // #define P_GAIN 0
 // #define D_GAIN 0
 // #define I_GAIN 0
+#define I_SATURATE 200
+
+// Roll PID Gains
 #define P_GAIN_ROLL 12
 #define D_GAIN_ROLL 2.5
 #define I_GAIN_ROLL 1
@@ -38,8 +46,11 @@
 // #define D_GAIN_ROLL 0
 // #define I_GAIN_ROLL 0
 #define I_SATURATE_ROLL 200
-#define I_SATURATE 200
+
+// Motor Constants
 #define MOTOR_MAX 1200
+
+
 int setup_imu();
 void calibrate_imu();      
 void read_imu();    
@@ -54,7 +65,7 @@ float z_gyro_calibration=0;
 float roll_calibration=0;
 float pitch_calibration=0; 
 float accel_z_calibration=0;
-float imu_data[6]; //accel xyz,  gyro xyz, 
+float imu_data[6]; //accel xyz,  gyro xyz
 long time_curr;
 long time_prev;
 long joy_prev;
@@ -75,18 +86,24 @@ float old_gyro_roll;
 float old_gyro_pitch;
 int prev_sequence = 0;
 bool sequence_entered = 0;
-int motor_commands[4];
-float p_err;
-float r_err;
+
 int J_thrust;
-int motor_thrust;
 int J_pitch;
 int J_roll;
+
+int motor_thrust;
 float desired_pitch;
+float desired_roll;
+
+int motor_commands[4];
+
+float p_err;
+float r_err;
+
 float I_pitch = 0;
 float I_roll = 0;
 int motor_address,accel_address,gyro_address;
-float desired_roll;
+
 bool paused = 0;
 // std::vector<std::vector<float>> pitchroll;
 //global variables to add
