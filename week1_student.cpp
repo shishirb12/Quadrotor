@@ -27,25 +27,29 @@
 #define ROLL_AMPLITUDE 20
 
 // Pitch PID Gains
-#define P_GAIN 18
-#define D_GAIN 5
-#define I_GAIN 1
+// #define P_GAIN 18
+// #define D_GAIN 5
+// #define I_GAIN 1
 // #define P_GAIN 12
 // #define D_GAIN 2.5
 // #define I_GAIN 1
-// #define P_GAIN 0
-// #define D_GAIN 0
-// #define I_GAIN 0
+#define P_GAIN 0
+#define D_GAIN 0
+#define I_GAIN 0
 #define I_SATURATE 200
 
 // Roll PID Gains
-#define P_GAIN_ROLL 12
-#define D_GAIN_ROLL 2.5
-#define I_GAIN_ROLL 1
-// #define P_GAIN_ROLL 0
-// #define D_GAIN_ROLL 0
-// #define I_GAIN_ROLL 0
+// #define P_GAIN_ROLL 12
+// #define D_GAIN_ROLL 2.5
+// #define I_GAIN_ROLL 1
+#define P_GAIN_ROLL 0
+#define D_GAIN_ROLL 0
+#define I_GAIN_ROLL 0
 #define I_SATURATE_ROLL 200
+
+// Yaw PID Gains
+#define P_GAIN_YAW 10
+
 
 // Motor Constants
 #define MOTOR_MAX 1200
@@ -404,10 +408,10 @@ void set_motor(Joystick joystick_data){
     I_roll = -I_SATURATE_ROLL;
   }
 
-  motor_commands[1] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll;
-  motor_commands[3] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll;
-  motor_commands[0] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll;
-  motor_commands[2] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll;
+  motor_commands[1] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll + P_GAIN_YAW*imu_data[6];
+  motor_commands[3] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll + P_GAIN_YAW*imu_data[6];
+  motor_commands[0] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll - P_GAIN_YAW*imu_data[6];
+  motor_commands[2] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll - P_GAIN_YAW*imu_data[6];
   
   
   for(int i = 0; i < 4; i++){
