@@ -25,6 +25,7 @@
 #define THRUST_AMPLITUDE 100
 #define PITCH_AMPLITUDE 20
 #define ROLL_AMPLITUDE 20
+#define YAW_AMPLITUDE 10
 
 // Pitch PID Gains
 // #define P_GAIN 18
@@ -94,10 +95,12 @@ bool sequence_entered = 0;
 int J_thrust;
 int J_pitch;
 int J_roll;
+int J_yaw;
 
 int motor_thrust;
 float desired_pitch;
 float desired_roll;
+float desired_yaw;
 
 int motor_commands[4];
 
@@ -357,12 +360,15 @@ void set_motor(Joystick joystick_data){
   J_thrust = joystick_data.thrust;
   J_pitch = joystick_data.pitch;
   J_roll = joystick_data.roll;
+  J_yaw = joystick_data.yaw;
   
   desired_pitch = (  ((float)J_pitch) * (PITCH_AMPLITUDE) / (128.0)  ) - PITCH_AMPLITUDE;
   desired_roll = (  ((float)J_roll) * (ROLL_AMPLITUDE) / (128.0)  ) - ROLL_AMPLITUDE;
+  desired_yaw = (  ((float)J_yaw) * (YAW_AMPLITUDE) / (128.0)  ) - YAW_AMPLITUDE;
   motor_thrust = THRUST_NEUTRAL + THRUST_AMPLITUDE* (((float)(128.0-J_thrust)/128.0));
   p_err = pitch_angle - desired_pitch;
   r_err = roll_angle - desired_roll;
+  y_err = imu_data[3] - desired_yaw;
   
   // p_err = 0;
   // milestone 1
@@ -408,10 +414,10 @@ void set_motor(Joystick joystick_data){
     I_roll = -I_SATURATE_ROLL;
   }
 
-  motor_commands[1] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll + P_GAIN_YAW*imu_data[6];
-  motor_commands[3] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll + P_GAIN_YAW*imu_data[6];
-  motor_commands[0] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll - P_GAIN_YAW*imu_data[6];
-  motor_commands[2] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll - P_GAIN_YAW*imu_data[6];
+  motor_commands[1] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll + P_GAIN_YAW*y_err;
+  motor_commands[3] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll + P_GAIN_YAW*y_err;
+  motor_commands[0] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll - P_GAIN_YAW*y_err;
+  motor_commands[2] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll - P_GAIN_YAW*y_err;
   
   
   for(int i = 0; i < 4; i++){
@@ -751,7 +757,7 @@ int main (int argc, char *argv[])
 {
     
     fp = fopen("output.csv", "w");  
-    fprintf(fp, "Front PWM, Back PWM, Roll Angle, Desired Roll\n");
+    fprintf(fp, "CW PWM, CCW PWM, Yaw Velocity, Desired Yaw\n");
     setup_imu();
     // calibrate_imu();    
     motor_enable();
@@ -782,7 +788,7 @@ int main (int argc, char *argv[])
         set_motors(1, 1, 1, 1);
       }
       // printf("M1:%d\t\tM2:%d\t\tM3:%d\t\tM4:%d\r\n", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3]);
-      fprintf(fp, "%d,%d,%f,%f\n", motor_commands[0], motor_commands[2], 10*roll_angle, 10*desired_roll);
+      fprintf(fp, "%d,%d,%f,%f\n", motor_commands[0], motor_commands[2], 10*imu_data[3], 10*desired_yaw);
     }
   return 0;
 }
