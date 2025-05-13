@@ -21,38 +21,39 @@
 #define TIMEOUT 0.75
 
 // Controller Constants
-#define THRUST_NEUTRAL 500
-#define THRUST_AMPLITUDE 100
-#define PITCH_AMPLITUDE 20
-#define ROLL_AMPLITUDE 20
+#define THRUST_NEUTRAL 1400
+#define THRUST_AMPLITUDE 400
+#define PITCH_AMPLITUDE 5
+#define ROLL_AMPLITUDE 5
+#define YAW_AMPLITUDE 200
 
 // Pitch PID Gains
 // #define P_GAIN 18
 // #define D_GAIN 5
 // #define I_GAIN 1
-// #define P_GAIN 12
-// #define D_GAIN 2.5
-// #define I_GAIN 1
-#define P_GAIN 0
-#define D_GAIN 0
-#define I_GAIN 0
+#define P_GAIN 12
+#define D_GAIN 2.5
+#define I_GAIN 2
+// #define P_GAIN 0
+// #define D_GAIN 0
+// #define I_GAIN 0
 #define I_SATURATE 200
 
 // Roll PID Gains
-// #define P_GAIN_ROLL 12
-// #define D_GAIN_ROLL 2.5
-// #define I_GAIN_ROLL 1
-#define P_GAIN_ROLL 0
-#define D_GAIN_ROLL 0
-#define I_GAIN_ROLL 0
+#define P_GAIN_ROLL 12
+#define D_GAIN_ROLL 2.5
+#define I_GAIN_ROLL 1
+// #define P_GAIN_ROLL 0
+// #define D_GAIN_ROLL 0
+// #define I_GAIN_ROLL 0
 #define I_SATURATE_ROLL 200
 
 // Yaw PID Gains
-#define P_GAIN_YAW 10
+#define P_GAIN_YAW 2.5
 
 
 // Motor Constants
-#define MOTOR_MAX 1200
+#define MOTOR_MAX 2000
 
 
 int setup_imu();
@@ -66,10 +67,14 @@ FILE *fp;
 float x_gyro_calibration=0;
 float y_gyro_calibration=0;
 float z_gyro_calibration=0;
+float test_x_gyro_calibration=0;
+float test_y_gyro_calibration=0;
+float test_z_gyro_calibration=0;
 float roll_calibration=0;
 float pitch_calibration=0; 
 float accel_z_calibration=0;
 float imu_data[6]; //accel xyz,  gyro xyz
+float test_imu_data[6]; //accel xyz,  gyro xyz
 long time_curr;
 long time_prev;
 long joy_prev;
@@ -88,21 +93,26 @@ float intl_roll = 0;
 float A = 0.02;
 float old_gyro_roll;
 float old_gyro_pitch;
+float test_old_gyro_roll;
+float test_old_gyro_pitch;
 int prev_sequence = 0;
 bool sequence_entered = 0;
 
 int J_thrust;
 int J_pitch;
 int J_roll;
+int J_yaw;
 
 int motor_thrust;
 float desired_pitch;
 float desired_roll;
+float desired_yaw;
 
 int motor_commands[4];
 
 float p_err;
 float r_err;
+float y_err;
 
 float I_pitch = 0;
 float I_roll = 0;
@@ -245,7 +255,7 @@ void read_imu()
   //accel reads
 
   address=0x12;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(accel_address,address);    
+  vw=wiringPiI2CReadReg16(accel_address,address);
   //convert from 2's complement
   if(vw>0x8000)
   {
@@ -320,6 +330,55 @@ void read_imu()
 }
 
 
+void read_imu_test()
+{
+  uint8_t address=0;//todo: set address value for accel x value 
+  float ax=0;
+  float az=0;
+  float ay=0; 
+  int vh=0;
+  int vl=0;
+  int vw=0;
+  test_old_gyro_pitch = imu_data[5];
+  test_old_gyro_roll = imu_data[4];
+
+
+  //accel reads
+
+  address=0x12;//use 0x00 format for hex
+  vw=wiringPiI2CReadReg16(accel_address,address);
+  printf("x: %d\t\t", vw);
+
+  address=0x14;//use 0x00 format for hex
+  vw=wiringPiI2CReadReg16(accel_address,address);   
+  printf("y: %d\t\t", vw);
+  
+  address=0x16;//use 0x00 format for hex
+  vw=wiringPiI2CReadReg16(accel_address,address);   
+  printf("z: %d\t\t", vw);
+ 
+  test_x_gyro_calibration = 0;
+  test_y_gyro_calibration = 0;
+  test_z_gyro_calibration = 0;
+  
+
+  address=0x02;//use 0x00 format for hex
+  vw=wiringPiI2CReadReg16(gyro_address,address);   
+  printf("x_gyro: %d\t", vw);
+  
+  address=0x04;//use 0x00 format for hex
+  vw=wiringPiI2CReadReg16(gyro_address,address); 
+  printf("y_gyro: %d\t", vw);   
+
+  address=0x06;//use 0x00 format for hex
+  vw=wiringPiI2CReadReg16(gyro_address,address);
+  printf("\tz_gyro: %d\r\n\n", vw);   
+
+  
+
+
+}
+
 void update_filter()
 {
 
@@ -357,12 +416,15 @@ void set_motor(Joystick joystick_data){
   J_thrust = joystick_data.thrust;
   J_pitch = joystick_data.pitch;
   J_roll = joystick_data.roll;
+  J_yaw = joystick_data.yaw;
   
   desired_pitch = (  ((float)J_pitch) * (PITCH_AMPLITUDE) / (128.0)  ) - PITCH_AMPLITUDE;
   desired_roll = (  ((float)J_roll) * (ROLL_AMPLITUDE) / (128.0)  ) - ROLL_AMPLITUDE;
+  desired_yaw = -((  ((float)J_yaw) * (YAW_AMPLITUDE) / (128.0)  ) - YAW_AMPLITUDE);
   motor_thrust = THRUST_NEUTRAL + THRUST_AMPLITUDE* (((float)(128.0-J_thrust)/128.0));
   p_err = pitch_angle - desired_pitch;
   r_err = roll_angle - desired_roll;
+  y_err = imu_data[3] - desired_yaw;
   
   // p_err = 0;
   // milestone 1
@@ -408,10 +470,10 @@ void set_motor(Joystick joystick_data){
     I_roll = -I_SATURATE_ROLL;
   }
 
-  motor_commands[1] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll + P_GAIN_YAW*imu_data[6];
-  motor_commands[3] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll + P_GAIN_YAW*imu_data[6];
-  motor_commands[0] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll - P_GAIN_YAW*imu_data[6];
-  motor_commands[2] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll - P_GAIN_YAW*imu_data[6];
+  motor_commands[1] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll - P_GAIN_YAW*y_err;
+  motor_commands[3] = motor_thrust - P_GAIN*p_err - D_GAIN*imu_data[5] - I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll + P_GAIN_YAW*y_err;
+  motor_commands[0] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch + P_GAIN_ROLL*r_err + D_GAIN_ROLL*imu_data[4] + I_roll + P_GAIN_YAW*y_err;
+  motor_commands[2] = motor_thrust + P_GAIN*p_err + D_GAIN*imu_data[5] + I_pitch - P_GAIN_ROLL*r_err - D_GAIN_ROLL*imu_data[4] - I_roll - P_GAIN_YAW*y_err;
   
   
   for(int i = 0; i < 4; i++){
@@ -751,7 +813,7 @@ int main (int argc, char *argv[])
 {
     
     fp = fopen("output.csv", "w");  
-    fprintf(fp, "Front PWM, Back PWM, Roll Angle, Desired Roll\n");
+    fprintf(fp, "CW PWM, CCW PWM, Yaw Velocity, Desired Yaw\n");
     setup_imu();
     // calibrate_imu();    
     motor_enable();
@@ -765,16 +827,28 @@ int main (int argc, char *argv[])
       //be sure to update the while(1) in main to use run_program instead 
     while(run_program == 1)
     {
-      read_imu();    
+      read_imu();   
+      read_imu_test(); 
       update_filter();
       //printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
       joystick_data = *shared_memory;
 
       safety_check(joystick_data, prev_sequence);
-      printf("\tmc1: %d\tmc2: %d\tpitch: %.3f\t\tdpitch: %.3f\n", motor_commands[0], motor_commands[2], 10*roll_angle, 10*desired_roll);
+      // printf("\tx: %f\ty: %f\tz: %f\r\n", imu_data[0], imu_data[1], imu_data[2]);
+      // printf("\tmc1: %d\tmc2: %d\tpitch: %.3f\troll: %.3f\r\n", motor_commands[0], motor_commands[2], pitch_angle, roll_angle);
+      // printf("\t%d\t%d\t%f\t%f\r\n", motor_commands[0], motor_commands[2], 10*imu_data[3], 10*desired_yaw);
+
       
       prev_sequence = joystick_data.sequence_num;
-
+      if(motor_commands[0]==2000){
+        printf("WARNING: Motor 1 Limit\r\n");
+      }else if(motor_commands[1]==2000){
+        printf("WARNING: Motor 2 Limit\r\n");
+      }else if(motor_commands[2]==2000){
+        printf("WARNING: Motor 3 Limit\r\n");
+      }else if(motor_commands[3]==2000){
+        printf("WARNING: Motor 4 Limit\r\n");
+      }
 
       if(paused == 0){
         set_motor(joystick_data);
@@ -782,7 +856,7 @@ int main (int argc, char *argv[])
         set_motors(1, 1, 1, 1);
       }
       // printf("M1:%d\t\tM2:%d\t\tM3:%d\t\tM4:%d\r\n", motor_commands[0], motor_commands[1], motor_commands[2], motor_commands[3]);
-      fprintf(fp, "%d,%d,%f,%f\n", motor_commands[0], motor_commands[2], 10*roll_angle, 10*desired_roll);
+      fprintf(fp, "%d,%d,%f,%f\n", motor_commands[0], motor_commands[2], 10*imu_data[3], 10*desired_yaw);
     }
   return 0;
 }
