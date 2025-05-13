@@ -67,14 +67,10 @@ FILE *fp;
 float x_gyro_calibration=0;
 float y_gyro_calibration=0;
 float z_gyro_calibration=0;
-float test_x_gyro_calibration=0;
-float test_y_gyro_calibration=0;
-float test_z_gyro_calibration=0;
 float roll_calibration=0;
 float pitch_calibration=0; 
 float accel_z_calibration=0;
 float imu_data[6]; //accel xyz,  gyro xyz
-float test_imu_data[6]; //accel xyz,  gyro xyz
 long time_curr;
 long time_prev;
 long joy_prev;
@@ -93,8 +89,6 @@ float intl_roll = 0;
 float A = 0.02;
 float old_gyro_roll;
 float old_gyro_pitch;
-float test_old_gyro_roll;
-float test_old_gyro_pitch;
 int prev_sequence = 0;
 bool sequence_entered = 0;
 
@@ -323,56 +317,6 @@ void read_imu()
     vw=-vw-1;
   }          
   imu_data[5]= -(((vw - (-32768)) * (1000 - (-1000)) / (32767 - (-32768))) + (-1000) - z_gyro_calibration);//convert to degrees/sec  
-
-  
-
-
-}
-
-
-void read_imu_test()
-{
-  uint8_t address=0;//todo: set address value for accel x value 
-  float ax=0;
-  float az=0;
-  float ay=0; 
-  int vh=0;
-  int vl=0;
-  int vw=0;
-  test_old_gyro_pitch = imu_data[5];
-  test_old_gyro_roll = imu_data[4];
-
-
-  //accel reads
-
-  address=0x12;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(accel_address,address);
-  printf("x: %d\t\t", vw);
-
-  address=0x14;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(accel_address,address);   
-  printf("y: %d\t\t", vw);
-  
-  address=0x16;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(accel_address,address);   
-  printf("z: %d\t\t", vw);
- 
-  test_x_gyro_calibration = 0;
-  test_y_gyro_calibration = 0;
-  test_z_gyro_calibration = 0;
-  
-
-  address=0x02;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(gyro_address,address);   
-  printf("x_gyro: %d\t", vw);
-  
-  address=0x04;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(gyro_address,address); 
-  printf("y_gyro: %d\t", vw);   
-
-  address=0x06;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(gyro_address,address);
-  printf("\tz_gyro: %d\r\n\n", vw);   
 
   
 
@@ -828,7 +772,6 @@ int main (int argc, char *argv[])
     while(run_program == 1)
     {
       read_imu();   
-      read_imu_test(); 
       update_filter();
       //printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
       joystick_data = *shared_memory;
