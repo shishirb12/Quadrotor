@@ -18,7 +18,7 @@
 #define GYRO_MAX 300
 #define ROLL_MAX 45
 #define PITCH_MAX 45
-#define TIMEOUT 0.75
+#define TIMEOUT 10000000
 
 // Controller Constants
 #define THRUST_NEUTRAL 1400
@@ -831,7 +831,7 @@ int main (int argc, char *argv[])
       read_imu_test(); 
       update_filter();
       //printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
-      joystick_data = *shared_memory;
+      // joystick_data = *shared_memory;
 
       safety_check(joystick_data, prev_sequence);
       // printf("\tx: %f\ty: %f\tz: %f\r\n", imu_data[0], imu_data[1], imu_data[2]);
