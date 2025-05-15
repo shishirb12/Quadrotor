@@ -21,8 +21,8 @@
 #define TIMEOUT 10000000
 
 // Controller Constants
-#define THRUST_NEUTRAL 1400
-#define THRUST_AMPLITUDE 400
+#define THRUST_NEUTRAL 1300
+#define THRUST_AMPLITUDE 500
 #define PITCH_AMPLITUDE 5
 #define ROLL_AMPLITUDE 5
 #define YAW_AMPLITUDE 200
@@ -31,7 +31,7 @@
 // #define P_GAIN 18
 // #define D_GAIN 5
 // #define I_GAIN 1
-#define P_GAIN 12
+#define P_GAIN 14
 #define D_GAIN 2.5
 #define I_GAIN 2
 // #define P_GAIN 0
@@ -40,16 +40,16 @@
 #define I_SATURATE 200
 
 // Roll PID Gains
-#define P_GAIN_ROLL 12
+#define P_GAIN_ROLL 16
 #define D_GAIN_ROLL 2.5
-#define I_GAIN_ROLL 1
+#define I_GAIN_ROLL 2
 // #define P_GAIN_ROLL 0
 // #define D_GAIN_ROLL 0
 // #define I_GAIN_ROLL 0
 #define I_SATURATE_ROLL 200
 
 // Yaw PID Gains
-#define P_GAIN_YAW 2.5
+#define P_GAIN_YAW 6
 
 
 // Motor Constants
@@ -147,7 +147,7 @@ void setup_joystick()
   int segment_id;   
   struct shmid_ds shmbuffer; 
   int segment_size; 
-  const int shared_segment_size = 0x6400; 
+  const int shared_segment_size = sizeof(struct Joystick);
   int smhkey=33222;
   
   /* Allocate a shared memory segment.  */ 
@@ -289,7 +289,8 @@ void read_imu()
   
 
   address=0x02;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(gyro_address,address);   
+  vw=wiringPiI2CReadReg16(gyro_address,address);  
+  // printf("%d\r\n", vw); 
   //convert from 2's complement          
   if(vw>0x8000)
   {
@@ -759,7 +760,7 @@ int main (int argc, char *argv[])
     fp = fopen("output.csv", "w");  
     fprintf(fp, "CW PWM, CCW PWM, Yaw Velocity, Desired Yaw\n");
     setup_imu();
-    // calibrate_imu();    
+    calibrate_imu();    
     motor_enable();
       setup_joystick();
       signal(SIGINT, &trap);
@@ -774,11 +775,12 @@ int main (int argc, char *argv[])
       read_imu();   
       update_filter();
       //printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
-      // joystick_data = *shared_memory;
+      joystick_data = *shared_memory;
 
       safety_check(joystick_data, prev_sequence);
       // printf("\tx: %f\ty: %f\tz: %f\r\n", imu_data[0], imu_data[1], imu_data[2]);
-      // printf("\tmc1: %d\tmc2: %d\tpitch: %.3f\troll: %.3f\r\n", motor_commands[0], motor_commands[2], pitch_angle, roll_angle);
+      // printf("rerror: %.3f\r\n", r_err);
+      printf("\tmc1: %d\tmc2: %d\tpitch: %.3f\troll: %.3f\r\n", motor_commands[0], motor_commands[2], pitch_angle, roll_angle);
       // printf("\t%d\t%d\t%f\t%f\r\n", motor_commands[0], motor_commands[2], 10*imu_data[3], 10*desired_yaw);
 
       

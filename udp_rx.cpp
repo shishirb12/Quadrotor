@@ -60,7 +60,7 @@ int main() {
     data* shared_memory;
     struct shmid_ds shmbuffer;
     int segment_size;
-    const int shared_segment_size = 0x6400;
+    const int shared_segment_size = sizeof(struct data);
     int smhkey=33222;
     int ch = 0;
     
