@@ -211,8 +211,18 @@ void calibrate_imu()
   for (int i = 0; i < 1000; i++) {
     read_imu();
     // reads IMU values and adds to running sum
-    roll_sum += atan2(imu_data[2], imu_data[0])*180/M_PI;
-    pitch_sum += atan2(imu_data[1], imu_data[0])*180/M_PI;
+    if(atan2(imu_data[2], imu_data[0])*180/M_PI > 10){
+      roll_sum += 10;
+    }
+    else{
+      roll_sum += atan2(imu_data[2], imu_data[0])*180/M_PI;
+    }
+    if(atan2(imu_data[1], imu_data[0])*180/M_PI > 10){
+      pitch_sum += 0;
+    }
+    else{
+      pitch_sum += atan2(imu_data[1], imu_data[0])*180/M_PI;
+    }
     z_accel_sum += imu_data[2];
 
     x_gyro_sum += imu_data[3];
