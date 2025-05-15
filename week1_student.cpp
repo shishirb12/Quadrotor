@@ -21,7 +21,7 @@
 #define TIMEOUT 10000000
 
 // Controller Constants
-#define THRUST_NEUTRAL 1300
+#define THRUST_NEUTRAL 1400
 #define THRUST_AMPLITUDE 500
 #define PITCH_AMPLITUDE 5
 #define ROLL_AMPLITUDE 5
@@ -33,11 +33,11 @@
 // #define I_GAIN 1
 #define P_GAIN 14
 #define D_GAIN 2.5
-#define I_GAIN 2
+#define I_GAIN 2.5
 // #define P_GAIN 0
 // #define D_GAIN 0
 // #define I_GAIN 0
-#define I_SATURATE 200
+#define I_SATURATE 300
 
 // Roll PID Gains
 #define P_GAIN_ROLL 16
@@ -49,7 +49,7 @@
 #define I_SATURATE_ROLL 200
 
 // Yaw PID Gains
-#define P_GAIN_YAW 6
+#define P_GAIN_YAW 4
 
 
 // Motor Constants
@@ -210,14 +210,18 @@ void calibrate_imu()
   float z_accel_sum = 0.0;
   for (int i = 0; i < 1000; i++) {
     read_imu();
+
+    
     // reads IMU values and adds to running sum
-    if(atan2(imu_data[2], imu_data[0])*180/M_PI > 10){
-      roll_sum += 10;
+    if(atan2(imu_data[2], imu_data[0])*180/M_PI > 5){
+      printf("r rejected");
+      roll_sum += 0;
     }
     else{
       roll_sum += atan2(imu_data[2], imu_data[0])*180/M_PI;
     }
-    if(atan2(imu_data[1], imu_data[0])*180/M_PI > 10){
+    if(atan2(imu_data[1], imu_data[0])*180/M_PI > 5){
+      printf("p rejected");
       pitch_sum += 0;
     }
     else{
@@ -260,6 +264,10 @@ void read_imu()
 
   address=0x12;//use 0x00 format for hex
   vw=wiringPiI2CReadReg16(accel_address,address);
+  while(vw < 0){
+    vw=wiringPiI2CReadReg16(accel_address,address);
+  }
+  printf("x: %d\t\t", vw);
   //convert from 2's complement
   if(vw>0x8000)
   {
@@ -269,7 +277,11 @@ void read_imu()
   imu_data[0]= (((float)vw)/32768 * 3);//convert to g's  //figure this out 
   
   address=0x14;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(accel_address,address);   
+  vw=wiringPiI2CReadReg16(accel_address,address); 
+  while(vw < 0){
+    vw=wiringPiI2CReadReg16(accel_address,address);
+  }  
+  printf("x: %d\t\t", vw);
   //convert from 2's complement
   if(vw>0x8000)
   {
@@ -279,7 +291,11 @@ void read_imu()
   imu_data[1]= (((float)vw)/32768 * 3);//convert to g's  //figure this out 
   
   address=0x16;//use 0x00 format for hex
-  vw=wiringPiI2CReadReg16(accel_address,address);   
+  vw=wiringPiI2CReadReg16(accel_address,address); 
+  while(vw < 0){
+    vw=wiringPiI2CReadReg16(accel_address,address);
+  } 
+  printf("x: %d\r\n", vw); 
   //convert from 2's complement     
   if(vw>0x8000)
   {
@@ -469,7 +485,7 @@ int setup_imu()
     sleep(1);
     wiringPiI2CWriteReg8(accel_address, 0x7d, 0x04); //power on accel    
     wiringPiI2CWriteReg8(accel_address, 0x41, 0x00); //accel range to +_3g    
-    wiringPiI2CWriteReg8(accel_address, 0x40, 0x8A); //high speed filtered accel
+    wiringPiI2CWriteReg8(accel_address, 0x40, 0x8B); //high speed filtered accel
     
     wiringPiI2CWriteReg8(gyro_address, 0x11, 0x00);//power on gyro
     wiringPiI2CWriteReg8(gyro_address, 0x0F, 0x01);//set gyro to +-1000dps
@@ -790,7 +806,7 @@ int main (int argc, char *argv[])
       safety_check(joystick_data, prev_sequence);
       // printf("\tx: %f\ty: %f\tz: %f\r\n", imu_data[0], imu_data[1], imu_data[2]);
       // printf("rerror: %.3f\r\n", r_err);
-      printf("\tmc1: %d\tmc2: %d\tpitch: %.3f\troll: %.3f\r\n", motor_commands[0], motor_commands[2], pitch_angle, roll_angle);
+      // printf("\tmc1: %d\tmc2: %d\tpitch: %.3f\troll: %.3f\r\n", motor_commands[0], motor_commands[2], pitch_angle, roll_angle);
       // printf("\t%d\t%d\t%f\t%f\r\n", motor_commands[0], motor_commands[2], 10*imu_data[3], 10*desired_yaw);
 
       
