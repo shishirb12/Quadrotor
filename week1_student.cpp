@@ -129,11 +129,21 @@ struct Joystick
   int sequence_num;
 };
 
+struct Camera
+{
+  int x;
+  int y;
+  int z;
+  int yaw;
+  int sequence_num;
+};
 
 Joystick* shared_memory; 
+Camera* camera_memory; 
 int run_program=1;
 
 void set_motor(Joystick joystick_data);
+
 
 
 void safety_check(Joystick joystick_data, int prev_sequence);
@@ -164,6 +174,28 @@ void setup_joystick()
 
 }
 
+void setup_camera()
+{
+
+  int segment_id;   
+  struct shmid_ds shmbuffer; 
+  int segment_size; 
+  const int shared_segment_size = sizeof(struct Camera);
+  int smhkey=123456;
+  
+  /* Allocate a shared memory segment.  */ 
+  segment_id = shmget (smhkey, shared_segment_size,IPC_CREAT | 0666); 
+  /* Attach the shared memory segment.  */ 
+  camera_memory = (Camera*) shmat (segment_id, 0, 0); 
+  printf ("shared memory attached at address %p\n", camera_memory); 
+  /* Determine the segment's size. */ 
+  shmctl (segment_id, IPC_STAT, &shmbuffer); 
+  segment_size  =               shmbuffer.shm_segsz; 
+  printf ("segment size: %d\n", segment_size); 
+  /* Write a string to the shared memory segment.  */ 
+  // sprintf (shared_memory, "test!!!!."); 
+
+}
 
 //when cntrl+c pressed, kill motors
 
@@ -789,10 +821,12 @@ int main (int argc, char *argv[])
     calibrate_imu();    
     motor_enable();
       setup_joystick();
+      setup_camera();
       signal(SIGINT, &trap);
 
       //to refresh values from shared memory first 
       Joystick joystick_data=*shared_memory;
+      Camera camera_data =*camera_memory;
       int prev_sequence = joystick_data.sequence_num;
 
       //be sure to update the while(1) in main to use run_program instead 
@@ -802,6 +836,10 @@ int main (int argc, char *argv[])
       update_filter();
       //printf("pa:%10.5f\tpg:%10.5f\tp:%10.5f\tra:%10.5f\trg:%10.5f\tp:%10.5f\n\r",pitch_accel,intl_pitch,pitch_angle,roll_accel, intl_roll, roll_angle);
       joystick_data = *shared_memory;
+      camera_data =*camera_memory;
+
+      printf("camera=%d %d %d %d %d\n\r",camera_data.x,camera_data.y,camera_data.z,camera_data.yaw,camera_data.sequence_num);
+      
 
       safety_check(joystick_data, prev_sequence);
       // printf("\tx: %f\ty: %f\tz: %f\r\n", imu_data[0], imu_data[1], imu_data[2]);
