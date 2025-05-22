@@ -22,7 +22,7 @@
 
 // Controller Constants
 #define THRUST_NEUTRAL 1400
-#define THRUST_AMPLITUDE 500
+#define THRUST_AMPLITUDE 400
 #define PITCH_AMPLITUDE 5
 #define ROLL_AMPLITUDE 5
 #define YAW_AMPLITUDE 200
@@ -31,22 +31,22 @@
 // #define P_GAIN 18
 // #define D_GAIN 5
 // #define I_GAIN 1
-#define P_GAIN 14
+#define P_GAIN 12
 #define D_GAIN 2.5
-#define I_GAIN 2.5
+#define I_GAIN 1
 // #define P_GAIN 0
 // #define D_GAIN 0
 // #define I_GAIN 0
 #define I_SATURATE 300
 
 // Roll PID Gains
-#define P_GAIN_ROLL 16
+#define P_GAIN_ROLL 12
 #define D_GAIN_ROLL 2.5
-#define I_GAIN_ROLL 2
+#define I_GAIN_ROLL 1
 // #define P_GAIN_ROLL 0
 // #define D_GAIN_ROLL 0
 // #define I_GAIN_ROLL 0
-#define I_SATURATE_ROLL 200
+#define I_SATURATE_ROLL 300
 
 // Yaw PID Gains
 #define P_GAIN_YAW 4
@@ -213,14 +213,14 @@ void calibrate_imu()
 
     
     // reads IMU values and adds to running sum
-    if(atan2(imu_data[2], imu_data[0])*180/M_PI > 5){
+    if(atan2(imu_data[2], imu_data[0])*180/M_PI > 10){
       printf("r rejected");
       roll_sum += 0;
     }
     else{
       roll_sum += atan2(imu_data[2], imu_data[0])*180/M_PI;
     }
-    if(atan2(imu_data[1], imu_data[0])*180/M_PI > 5){
+    if(atan2(imu_data[1], imu_data[0])*180/M_PI > 10){
       printf("p rejected");
       pitch_sum += 0;
     }
